@@ -1,0 +1,6 @@
+python-telegram-bot~=20.7  # Alternative to telethon, if you decide to switch
+telethon~=1.33.1           # Telegram client library
+python-dotenv~=1.0.0       # For loading environment variables
+openai~=1.13.3             # OpenAI API client
+numpy~=1.26.3              # For vector calculations
+pytz~=2023.3.post1         # For timezone handling (used in hint scheduling)
