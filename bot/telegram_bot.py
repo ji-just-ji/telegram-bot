@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
+from pytz import timezone
 from telethon import TelegramClient, events
 
 
@@ -20,11 +21,15 @@ class TelegramBot:
         await self.client.start()
         self.logger.info("Client started successfully.")
         
+        # Send introduction message
+        await self.send_intro_message()
+        
         # Register message handler
         self.client.add_event_handler(self.handle_new_message, events.NewMessage)
         
         # Start background tasks
         asyncio.create_task(self.send_hourly_message())
+        asyncio.create_task(self.schedule_hint())
         
         # Run until disconnected
         await self.client.run_until_disconnected()
@@ -116,6 +121,7 @@ class TelegramBot:
         await self.client.send_message(
             chat_id,
             f"{self.config.message}\nDamn @{user} why did you trigger the bot? \n"
+            f"Next person to trigger the bot will take over as the loser.\n"
             f"If anyone can guess why the bot was triggered, you get a prize.\n"
             f"If you want to guess the answer, start your message with 'answer'. The bot will be quite lenient"
         )
@@ -172,9 +178,7 @@ class TelegramBot:
             )
             self.logger.info("Hourly update sent.")
     
-    async def send_hint(self):
-        """Send hint message when scheduled"""
-        pass
+
     
     async def schedule_hint(self):
         """Schedule hints based on configuration"""
@@ -183,20 +187,29 @@ class TelegramBot:
             return
           
         sg_tz = timezone('Asia/Singapore')
-          
-        for hint_id, date, time in self.config.hints.items():
-            hint_date = datetime.strptime(date, '%d/%m/%Y').date()
-            hint_time = datetime.strptime(time, '%H:%M').time()
-            
-            now = datetime.now(sg_tz)
-            
-            if now.date() == hint_date and now.time() == hint_time:
-                await self.client.send_message(
-                    int(self.config.private_id),
-                    f"Hint: {hint_id}"
+        for hint_id, hint_details in self.config.hints.items():
+            try:
+                hint_datetime = datetime.strptime(
+                    f"{hint_details['DATE']} {hint_details['TIME']}", "%d/%m/%Y %H:%M"
                 )
-                self.logger.info(f"Hint {hint_id} sent.")
-                break
+                hint_datetime = sg_tz.localize(hint_datetime)
+                now = datetime.now(sg_tz)
+                delay = (hint_datetime - now).total_seconds()
+
+                if delay > 0:
+                    asyncio.create_task(self.send_hint_after_delay(hint_details['HINT'], delay))
+                    self.logger.info(f"Scheduled hint {hint_id} for {hint_datetime}.")
+                else:
+                    self.logger.warning(f"Hint {hint_id} is in the past and will not be scheduled.")
+            except Exception as e:
+                self.logger.error(f"Error scheduling hint {hint_id}: {e}")
+
+    async def send_hint_after_delay(self, hint, delay):
+        """Send a hint after a specified delay"""
+        await asyncio.sleep(delay)
+        chat_id = int(self.config.target_chat_id if not self.config.testing else self.config.private_id)
+        await self.client.send_message(chat_id, hint)
+        self.logger.info(f"Hint sent: {hint}")
     
     async def get_user_name(self, event):
         """Get username of message sender"""
@@ -217,3 +230,41 @@ class TelegramBot:
         except Exception as e:
             self.logger.error(f"Error getting chat name: {e}")
             return None
+        
+    async def send_intro_message(self):
+        """Send introduction message to the chat"""
+        chat_id = int(self.config.target_chat_id if not self.config.testing else self.config.private_id)
+        if self.config.game == 1:
+            message = (
+                f"Hello! This is a bot to play a game. \n"
+                f"There's a special word(s) or sticker. Don't trigger the bot\n"
+                f"Have fun playing!"
+            )
+        elif self.config.game == 2:
+            message = (
+                f"Hello! This is a bot to play a game. \n"
+                f"Send the {self.counter.target_count} message to lose!\n"
+                f"Have fun playing!"
+            )
+        elif self.config.game == 3:
+            message = (
+                f"Hello! This is a bot to play a game. \n"
+                f"Don't break the chain, say {self.config.trigger_word} in every {self.config.buffer} words or you lose.\n"
+                f"Have fun playing!"
+            )
+        elif self.config.game == 4:
+            message = (
+                f"Hello! This is a bot to play a game. \n"
+                f"The bot has a special trigger. Don't trigger the bot\n"
+                f"Have fun playing!"
+            )
+        else:
+            self.logger.error("Invalid GAME value specified.")
+            return
+        
+        await self.client.send_message(
+            chat_id,
+            message
+        )    
+        
+        self.logger.info("Introduction message sent.")
