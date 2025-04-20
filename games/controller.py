@@ -175,4 +175,59 @@ class GameController:
         return loop_count == count
     
 
+    async def check_letter_count(self, event, count=5):
+        text = event.raw_text if event.raw_text else None
+        letter_count = sum(1 for char in text if char.isalpha())
         
+        if letter_count == count:
+            self.logger.info(f"Letter count reached: {letter_count}")
+            return True
+
+        return False
+    
+    async def check_digit_count(self, event, count=5):
+        text = event.raw_text if event.raw_text else None
+        digit_count = sum(1 for char in text if char.isdigit())
+        
+        if digit_count == count:
+            self.logger.info(f"Digit count reached: {digit_count}")
+            return True
+
+        return False
+    
+    async def check_word_count(self, event, count=5):
+        text = event.raw_text if event.raw_text else None
+        word_count = len(text.split())
+        
+        if word_count == count:
+            self.logger.info(f"Word count reached: {word_count}")
+            return True
+
+        return False
+    
+    async def check_alphabetical_order(self, event, count=5):
+        text = event.raw_text if event.raw_text else None
+        word_count = len(text.split())
+        
+        if word_count > count:
+            words = re.sub(r'[^a-zA-Z\s]', '', text).split()
+            first_letters = [word[0].lower() for word in words if word]
+            if first_letters == sorted(first_letters):
+                self.logger.info("First letters are in alphabetical order.")
+                return True
+
+            self.logger.info("First letters are not in alphabetical order.")
+        return False
+    
+    
+    async def check_oiiai(self, event):
+        text = event.raw_text if event.raw_text else ""
+        vowels = "aeiou"
+        text_vowels = ''.join([char for char in text.lower() if char in vowels])
+        
+        if "oiiai" not in text.lower() and "oiiai" == text_vowels:
+            self.logger.info("Message does not contain 'oiiai', but vowels form 'oiiai'.")
+            return True
+
+        self.logger.info("Condition not met for 'oiiai'.")
+        return False

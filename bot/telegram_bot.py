@@ -127,12 +127,28 @@ class TelegramBot:
         text = event.raw_text or ""
         
         if winner == self.game_controller.loser:
-            message = (
-                f"No punishment for you @{winner}, you guessed the answer correctly! \n"
-                f"Thanks for playing!\n"
-                f"The answer was: {text}\n"
-                f"The bot was triggered by: {self.config.trigger_condition}"
-            )
+            if self.config.trigger_condition in ["DOTS", "SPACES", "LETTERS", "DIGITS", "WORDS", "LOOPS"]:
+                message = (
+                    f"No punishment for you @{winner}, you guessed the answer correctly! \n"
+                    f"Thanks for playing!\n"
+                    f"The answer was: {text}\n"
+                    f"The bot was triggered by: {self.config.trigger_condition_value} {self.config.trigger_condition} in the message."
+                )
+            elif self.config.trigger_condition == "ALPHABET":
+                message = (
+                    f"No punishment for you @{winner}, you guessed the answer correctly! \n"
+                    f"Thanks for playing!\n"
+                    f"The answer was: {text}\n"
+                    f"The bot was triggered by: The first letter in each word is in "
+                    f"Alphabetical order with more than {self.config.trigger_condition_value} words."
+                )
+            else:
+                message = (
+                    f"No punishment for you @{winner}, you guessed the answer correctly! \n"
+                    f"Thanks for playing!\n"
+                    f"The answer was: {text}\n"
+                    f"The bot was triggered by: The vowels in your message spell {self.config.trigger_condition}."
+                )
         else:
             message = (
                 f"Correct! @{winner} guessed the answer correctly! \n"
