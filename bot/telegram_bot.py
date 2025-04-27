@@ -22,7 +22,7 @@ class TelegramBot:
         self.logger.info("Client started successfully.")
         
         # Send introduction message
-        # await self.send_intro_message()
+        await self.send_intro_message()
         
         # Register message handler
         self.client.add_event_handler(self.handle_new_message, events.NewMessage)
@@ -47,6 +47,13 @@ class TelegramBot:
             if event.sender_id == int(self.config.my_id) and self.config.count_user == "FALSE":
                 self.logger.info(f"Message from self ignored.")
                 return
+        
+        # Ignore ignored users
+        sender = await self.get_user_name(event)
+        if sender in self.config.ignored_users:
+            self.logger.info(f"Message from ignored user {sender} ignored.")
+            return
+
         
         # Log message
         sender_name = await self.get_user_name(event)
@@ -157,12 +164,34 @@ class TelegramBot:
                 )
         else:
             message = (
-                f"Correct! @{winner} guessed the answer correctly! \n"
-                f"Now @{self.game_controller.loser} owes you bbt! \n"
-                f"Thanks for playing!\n"
-                f"The answer was: {self.config.trigger_condition}\n"
-                f"The bot was triggered by: {text}"
+
             )
+            if self.config.trigger_condition in ["DOTS", "SPACES", "LETTERS", "DIGITS", "WORDS", "LOOPS"]:
+                message = (
+                    f"Correct! @{winner} guessed the answer correctly! \n"
+                    f"Now @{self.game_controller.loser} owes you bbt! \n"
+                    f"Thanks for playing!\n"
+                    f"The answer was: {self.config.trigger_condition}\n"
+                    f"The bot was triggered by: The first letter in each word is in "
+                    f"Alphabetical order with more than {self.config.trigger_condition_value} words."
+                
+                )
+            elif self.config.trigger_condition == "ALPHABET":
+                message = (
+                    f"Correct! @{winner} guessed the answer correctly! \n"
+                    f"Now @{self.game_controller.loser} owes you bbt! \n"
+                    f"Thanks for playing!\n"
+                    f"The answer was: {self.config.trigger_condition}\n"
+                    f"The bot was triggered by: {text}"
+                )
+            else:
+                message = (
+                    f"Correct! @{winner} guessed the answer correctly! \n"
+                    f"Now @{self.game_controller.loser} owes you bbt! \n"
+                    f"Thanks for playing!\n"
+                    f"The answer was: {text}\n"
+                    f"The bot was triggered by: The vowels in your message spell {self.config.trigger_condition}."
+                )
         
         await self.client.send_message(chat_id, message)
         self.logger.info(f"Correct answer guessed: {text}")
@@ -223,6 +252,7 @@ class TelegramBot:
         """Get name of chat"""
         try:
             chat = await event.get_chat()
+            self.logger.info(f"Chat name: {chat}")
             chat_name = chat.title if chat else None
             return chat_name
         except Exception as e:

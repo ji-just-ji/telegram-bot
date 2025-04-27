@@ -30,6 +30,9 @@ class Config:
         self.message = self.config.get('MESSAGE', "Trigger found!")
         self.count_user = self.config.get('COUNT_USER', "FALSE").upper()
         
+        # Ignored users
+        self.ignored_users = self.config.get('IGNORED_USERS', "").split(",")
+        
         # Game 1 or 3 config
         self.trigger_type = self.config.get('TRIGGER_TYPE')
         self.trigger_word = self.config.get('TRIGGER_WORD')
@@ -49,4 +52,4 @@ class Config:
         self.trigger_condition_value = int(self.config.get('TRIGGER_CONDITION_VALUE', 0))
         
         # Testing mode
-        self.testing = False
+        self.testing = True

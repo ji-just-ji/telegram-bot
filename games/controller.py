@@ -79,16 +79,14 @@ class GameController:
             self.counter.last_trigger = 0
         return False
       
-    async def check_correct_answer(self, event, threshold=0.85):
+    async def check_correct_answer(self, event, threshold=0.88):
         """Game 4: Check if message is a correct answer"""
         text = event.raw_text or ""
         if not text.lower().lstrip('"').rstrip('"').startswith('answer'):
             self.logger.info("Message does not start with 'answer'.")
             return False
         
-        if "oiiai" not in text.lower() and self.config.game == 4:
-            self.logger.info("Message doesn't contains 'oiiai'.")
-            return False
+        
         
         message_embedding = self.embedding_service.get_embedding(text)
         similarities = []
@@ -128,6 +126,8 @@ class GameController:
             return await self.check_loop_count(event, self.config.trigger_condition_value)
         elif self.config.trigger_condition == "OIIAI":
             return await self.check_oiiai(event)
+        elif self.config.trigger_condition == "ALPHABET":
+            return await self.check_alphabetical_order(event)
         else:
             self.logger.error("Invalid TRIGGER_CONDITION specified.")
             return False
@@ -214,12 +214,13 @@ class GameController:
     async def check_alphabetical_order(self, event, count=5):
         text = event.raw_text if event.raw_text else None
         word_count = len(text.split())
-        
-        if word_count > count:
+        self.logger.info(f"Word count: {word_count}")
+        self.logger.info(f"text: {text}")
+        if word_count >= count:
             words = re.sub(r'[^a-zA-Z\s]', '', text).split()
             first_letters = [word[0].lower() for word in words if word]
-            if first_letters == sorted(first_letters):
-                self.logger.info("First letters are in alphabetical order.")
+            if first_letters == sorted(first_letters) and len(set(first_letters)) == len(first_letters):
+                self.logger.info("First letters are in alphabetical order and are not the same.")
                 return True
 
             self.logger.info("First letters are not in alphabetical order.")
