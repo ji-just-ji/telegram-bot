@@ -22,7 +22,7 @@ class TelegramBot:
         self.logger.info("Client started successfully.")
         
         # Send introduction message
-        await self.send_intro_message()
+        # await self.send_intro_message()
         
         # Register message handler
         self.client.add_event_handler(self.handle_new_message, events.NewMessage)
@@ -177,8 +177,6 @@ class TelegramBot:
                 f"Game is still running! Current message count: {self.counter.message_count}"
             )
             self.logger.info("Hourly update sent.")
-    
-
     
     async def schedule_hint(self):
         """Schedule hints based on configuration"""

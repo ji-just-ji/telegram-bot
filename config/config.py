@@ -49,4 +49,4 @@ class Config:
         self.trigger_condition_value = int(self.config.get('TRIGGER_CONDITION_VALUE', 0))
         
         # Testing mode
-        self.testing = True
+        self.testing = False

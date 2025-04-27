@@ -86,6 +86,10 @@ class GameController:
             self.logger.info("Message does not start with 'answer'.")
             return False
         
+        if "oiiai" not in text.lower() and self.config.game == 4:
+            self.logger.info("Message doesn't contains 'oiiai'.")
+            return False
+        
         message_embedding = self.embedding_service.get_embedding(text)
         similarities = []
         wrong_similarities = []
@@ -122,6 +126,8 @@ class GameController:
             return await self.check_spaces(event, self.config.trigger_condition_value)
         elif self.config.trigger_condition == "LOOPS":
             return await self.check_loop_count(event, self.config.trigger_condition_value)
+        elif self.config.trigger_condition == "OIIAI":
+            return await self.check_oiiai(event)
         else:
             self.logger.error("Invalid TRIGGER_CONDITION specified.")
             return False
